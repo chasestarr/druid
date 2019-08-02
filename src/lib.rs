@@ -21,6 +21,7 @@ pub mod widget;
 mod data;
 mod env;
 mod event;
+mod init_theme;
 mod lens;
 mod value;
 
@@ -42,6 +43,7 @@ use druid_shell::window::{self, Text, WinCtx, WinHandler, WindowHandle};
 pub use druid_shell::window::{Cursor, MouseButton, MouseEvent};
 
 pub use data::Data;
+pub use env::{Env, EnvValue};
 pub use event::{Event, WheelEvent};
 pub use lens::{Lens, LensWrap};
 pub use value::{Delta, KeyPath, PathEl, PathFragment, Value};
@@ -128,12 +130,6 @@ impl<T> Widget<T> for Box<dyn Widget<T>> {
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: Option<&T>, data: &T, env: &Env) {
         self.deref_mut().update(ctx, old_data, data, env);
     }
-}
-
-#[derive(Clone, Default)]
-pub struct Env {
-    value: Value,
-    path: KeyPath,
 }
 
 pub struct PaintCtx<'a, 'b: 'a> {
@@ -360,7 +356,9 @@ impl<T: Data> UiState<T> {
     }
 
     fn root_env(&self) -> Env {
-        Default::default()
+        // TODO: stash this in UiState so we don't recreate every time
+        let theme = init_theme::init_theme();
+        Env::from_theme(theme)
     }
 
     /// Returns `true` if the event produced an action.
@@ -512,24 +510,6 @@ impl BoxConstraints {
     /// Returns the min size of these constraints.
     pub fn min(&self) -> Size {
         self.min
-    }
-}
-
-impl Env {
-    pub fn join(&self, fragment: impl PathFragment) -> Env {
-        let mut path = self.path.clone();
-        fragment.push_to_path(&mut path);
-        // TODO: better diagnostics on error
-        let value = self.value.access(fragment).expect("invalid path").clone();
-        Env { value, path }
-    }
-
-    pub fn get_data(&self) -> &Value {
-        &self.value
-    }
-
-    pub fn get_path(&self) -> &KeyPath {
-        &self.path
     }
 }
 

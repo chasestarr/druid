@@ -188,6 +188,12 @@ impl<'a> From<String> for EnvValue {
     }
 }
 
+impl From<HashMap<String, EnvValue>> for EnvValue {
+    fn from(x: HashMap<String, EnvValue>) -> EnvValue {
+        EnvValue::Map(x.into())
+    }
+}
+
 // TODO: make this more general (follow serde_json::Value). This
 // is a sketch.
 impl<'a> Index<&'a str> for EnvValue {
